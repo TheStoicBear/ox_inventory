@@ -117,7 +117,6 @@ Item('parachute', function(data, slot)
 			if data then
 				local chute = `GADGET_PARACHUTE`
 				SetPlayerParachuteTintIndex(PlayerData.id, -1)
-				GiveWeaponToPed(cache.ped, chute, 0, true, false)
 				SetPedGadget(cache.ped, chute, true)
 				lib.requestModel(1269906701)
 				client.parachute = CreateParachuteBagObject(cache.ped, true, true)

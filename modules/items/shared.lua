@@ -55,39 +55,6 @@ local function newItem(data)
 	ItemList[data.name] = data
 end
 
-for type, data in pairs(lib.load('data.weapons')) do
-	for k, v in pairs(data) do
-		v.name = k
-		v.close = type == 'Ammo' and true or false
-        v.weight = v.weight or 0
-
-		if type == 'Weapons' then
-			---@cast v OxWeapon
-			v.model = v.model or k -- actually weapon type or such? model for compatibility
-			v.hash = joaat(v.model)
-			v.stack = v.throwable and true or false
-			v.durability = v.durability or 0.05
-			v.weapon = true
-		else
-			v.stack = true
-		end
-
-		v[type == 'Ammo' and 'ammo' or type == 'Components' and 'component' or type == 'Tints' and 'tint' or 'weapon'] = true
-
-		if isServer then v.client = nil else
-			v.count = 0
-			v.server = nil
-			local clientData = v.client
-
-			if clientData?.image then
-				clientData.image = clientData.image:match('^[%w]+://') and ('url(%s)'):format(clientData.image) or ('url(%s/%s)'):format(client.imagepath, clientData.image)
-			end
-		end
-
-		ItemList[k] = v
-	end
-end
-
 for k, v in pairs(lib.load('data.items')) do
 	v.name = k
 	local success, response = pcall(newItem, v)

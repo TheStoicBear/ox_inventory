@@ -163,21 +163,6 @@ local function ConvertQB()
 
 		local shouldConvert = false
 
-		for _, v in pairs(items) do
-			if Items(v?.name) then
-				slot += 1
-				inventory[slot] = {slot=slot, name=v.name, count=v.amount, metadata = type(v.info) == 'table' and v.info or {}}
-				if v.type == "weapon" then
-					inventory[slot].metadata.durability = v.info.quality or 100
-					inventory[slot].metadata.ammo = v.info.ammo or 0
-					inventory[slot].metadata.components = {}
-					inventory[slot].metadata.serial = v.info.serie or GenerateSerial()
-					inventory[slot].metadata.quality = nil
-				end
-			end
-
-			shouldConvert = v.amount and true
-		end
 
 		if shouldConvert then
 			count += 1
@@ -220,19 +205,6 @@ local function ConvertQB()
 						local items = json.decode(v.items) or {}
 						local inventory, slot = {}, 0
 
-						for _, v in pairs(items) do
-							if Items(v?.name) then
-								slot += 1
-								inventory[slot] = {slot=slot, name=v.name, count=v.amount, metadata = type(v.info) == 'table' and v.info or {}}
-								if v.type == "weapon" then
-									inventory[slot].metadata.durability = v.info.quality or 100
-									inventory[slot].metadata.ammo = v.info.ammo or 0
-									inventory[slot].metadata.components = {}
-									inventory[slot].metadata.serial = v.info.serie or GenerateSerial()
-									inventory[slot].metadata.quality = nil
-								end
-							end
-						end
 
 						vehicles[owner][v.plate] = true
 						count += 1
@@ -271,20 +243,7 @@ local function ConvertQB()
 						local items = json.decode(v.items) or {}
 						local inventory, slot = {}, 0
 
-						for _, v in pairs(items) do
-							if Items(v?.name) then
-								slot += 1
-								inventory[slot] = {slot=slot, name=v.name, count=v.amount, metadata = type(v.info) == 'table' and v.info or {}}
 
-								if v.type == "weapon" then
-									inventory[slot].metadata.durability = v.info.quality or 100
-									inventory[slot].metadata.ammo = v.info.ammo or 0
-									inventory[slot].metadata.components = {}
-									inventory[slot].metadata.serial = v.info.serie or GenerateSerial()
-									inventory[slot].metadata.quality = nil
-								end
-							end
-						end
 
 						vehicles[owner][v.plate] = true
 						count += 1
@@ -386,23 +345,7 @@ local function Convert_Old_ESX_Property()
 
 		local datastore = MySQL.query.await('SELECT data FROM datastore_data WHERE owner = ? AND name = "property"', {inventories[i].owner})
 
-		for k,v in pairs(datastore) do
-			local obj = json.decode(v['data'])
-			if obj then
-				for b = 1, #obj['weapons'] do
-					local item = Items(obj['weapons'][b].name)
-					if item then
-						slot += 1
-						inventory[slot] = {slot=slot, name=obj['weapons'][b].name, count=1, metadata = {durability=100}}
-						if item.ammoname then
-							inventory[slot].metadata.ammo = obj['weapons'][b].ammo
-							inventory[slot].metadata.components = {}
-							inventory[slot].metadata.serial = GenerateSerial()
-						end
-					end
-				end
-			end
-		end
+
 		parameters[count] = {inventories[i].owner,"property"..inventories[i].owner,json.encode(inventory,{indent=false})}
 	end
 	MySQL.prepare.await('INSERT INTO ox_inventory (owner,name,data) VALUES (?,?,?)', parameters)

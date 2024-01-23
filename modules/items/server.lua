@@ -271,80 +271,63 @@ local TriggerEventHooks = require 'modules.hooks.server'
 ---@return table, number
 ---Generates metadata for new items being created through AddItem, buyItem, etc.
 function Items.Metadata(inv, item, metadata, count)
-	if type(inv) ~= 'table' then inv = Inventory(inv) end
-	if not item.weapon then metadata = not metadata and {} or type(metadata) == 'string' and {type=metadata} or metadata end
-	if not count then count = 1 end
+    if type(inv) ~= 'table' then inv = Inventory(inv) end
+    if not item.weapon then metadata = not metadata and {} or type(metadata) == 'string' and { type = metadata } or metadata end
+    if not count then count = 1 end
 
-	---@cast metadata table<string, any>
+    ---@cast metadata table<string, any>
+    local container = Items.containers[item.name]
 
-	if item.weapon then
-		if type(metadata) ~= 'table' then metadata = {} end
-		if not metadata.durability then metadata.durability = 100 end
-		if not metadata.ammo and item.ammoname then metadata.ammo = 0 end
-		if not metadata.components then metadata.components = {} end
+    if container then
+        count = 1
+        metadata.container = metadata.container or GenerateText(3) .. os.time()
+        metadata.size = container.size
+    elseif not next(metadata) then
+        if item.name == 'identification' then
+            count = 1
+            metadata = {
+                type = inv.player.name,
+                description = locale('identification', (inv.player.sex) and locale('male') or locale('female'), inv.player.dateofbirth)
+            }
+        elseif item.name == 'garbage' then
+            local trashType = trash[math.random(1, #trash)]
+            metadata.image = trashType.image
+            metadata.weight = trashType.weight
+            metadata.description = trashType.description
+        end
+    end
 
-		if metadata.registered ~= false and (metadata.ammo or item.name == 'WEAPON_STUNGUN') then
-			local registered = type(metadata.registered) == 'string' and metadata.registered or inv?.player?.name
-			metadata.registered = registered
-			metadata.serial = GenerateSerial(metadata.serial)
-		end
+    if not metadata.durability then
+        metadata = setItemDurability(ItemList[item.name], metadata)
+    end
 
-		if item.hash == `WEAPON_PETROLCAN` or item.hash == `WEAPON_HAZARDCAN` or item.hash == `WEAPON_FERTILIZERCAN` or item.hash == `WEAPON_FIREEXTINGUISHER` then
-			metadata.ammo = metadata.durability
-		end
-	else
-		local container = Items.containers[item.name]
+    if count > 1 and not item.stack then
+        count = 1
+    end
 
-		if container then
-			count = 1
-			metadata.container = metadata.container or GenerateText(3)..os.time()
-			metadata.size = container.size
-		elseif not next(metadata) then
-			if item.name == 'identification' then
-				count = 1
-				metadata = {
-					type = inv.player.name,
-					description = locale('identification', (inv.player.sex) and locale('male') or locale('female'), inv.player.dateofbirth)
-				}
-			elseif item.name == 'garbage' then
-				local trashType = trash[math.random(1, #trash)]
-				metadata.image = trashType.image
-				metadata.weight = trashType.weight
-				metadata.description = trashType.description
-			end
-		end
+    local response = TriggerEventHooks('createItem', {
+        inventoryId = inv and inv.id,
+        metadata = metadata,
+        item = item,
+        count = count,
+    })
 
-		if not metadata.durability then
-			metadata = setItemDurability(ItemList[item.name], metadata)
-		end
-	end
+    if type(response) == 'table' then
+        metadata = response
+    end
 
-	if count > 1 and not item.stack then
-		count = 1
-	end
+    if metadata.imageurl and Utils.IsValidImageUrl then
+        if Utils.IsValidImageUrl(metadata.imageurl) then
+            Utils.DiscordEmbed('Valid image URL', ('Created item "%s" (%s) with valid url in "%s".\n%s\nid: %s\nowner: %s'):format(metadata.label or item.label, item.name, inv.label, metadata.imageurl, inv.id, inv.owner, metadata.imageurl), metadata.imageurl, 65280)
+        else
+            Utils.DiscordEmbed('Invalid image URL', ('Created item "%s" (%s) with invalid url in "%s".\n%s\nid: %s\nowner: %s'):format(metadata.label or item.label, item.name, inv.label, metadata.imageurl, inv.id, inv.owner, metadata.imageurl), metadata.imageurl, 16711680)
+            metadata.imageurl = nil
+        end
+    end
 
-	local response = TriggerEventHooks('createItem', {
-		inventoryId = inv and inv.id,
-		metadata = metadata,
-		item = item,
-		count = count,
-	})
-
-	if type(response) == 'table' then
-		metadata = response
-	end
-
-	if metadata.imageurl and Utils.IsValidImageUrl then
-		if Utils.IsValidImageUrl(metadata.imageurl) then
-			Utils.DiscordEmbed('Valid image URL', ('Created item "%s" (%s) with valid url in "%s".\n%s\nid: %s\nowner: %s'):format(metadata.label or item.label, item.name, inv.label, metadata.imageurl, inv.id, inv.owner, metadata.imageurl), metadata.imageurl, 65280)
-		else
-			Utils.DiscordEmbed('Invalid image URL', ('Created item "%s" (%s) with invalid url in "%s".\n%s\nid: %s\nowner: %s'):format(metadata.label or item.label, item.name, inv.label, metadata.imageurl, inv.id, inv.owner, metadata.imageurl), metadata.imageurl, 16711680)
-			metadata.imageurl = nil
-		end
-	end
-
-	return metadata, count
+    return metadata, count
 end
+
 
 ---@param metadata table<string, any>
 ---@param item OxServerItem
@@ -366,38 +349,6 @@ function Items.CheckMetadata(metadata, item, name, ostime)
 		end
 	else
 		metadata = setItemDurability(item, metadata)
-	end
-
-	if item.weapon then
-		if metadata.components then
-			if table.type(metadata.components) == 'array' then
-				for i = #metadata.components, 1, -1 do
-					if not ItemList[metadata.components[i]] then
-						table.remove(metadata.components, i)
-					end
-				end
-			else
-				local components = {}
-				local size = 0
-
-				for _, component in pairs(metadata.components) do
-					if component and ItemList[component] then
-						size += 1
-						components[size] = component
-					end
-				end
-
-				metadata.components = components
-			end
-		end
-
-		if metadata.serial and item.throwable then
-			metadata.serial = nil
-		end
-
-		if metadata.specialAmmo and type(metadata.specialAmmo) ~= 'string' then
-			metadata.specialAmmo = nil
-		end
 	end
 
 	return metadata
