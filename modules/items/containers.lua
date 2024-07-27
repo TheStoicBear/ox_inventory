@@ -63,4 +63,50 @@ setContainerProperties('pizzabox', {
 	whitelist = { 'pizza' }
 })
 
+setContainerProperties('wallet', {
+	slots = 5,
+	maxWeight = 3000,
+	whitelist = { 'idcard' }
+})
+
+setContainerProperties('box_small', {
+	slots = 5,
+	maxWeight = 7500,
+})
+
+setContainerProperties('giftbox_red', {
+	slots = 5,
+	maxWeight = 3000,
+})
+
+setContainerProperties('giftbox_white', {
+	slots = 5,
+	maxWeight = 3000,
+})
+
+setContainerProperties('lscardbook_black', {
+	slots = 90,
+	maxWeight = 1000,
+	whitelist = { 'lstradingcard' }
+})
+
+setContainerProperties('lscardbook_blue', {
+	slots = 90,
+	maxWeight = 1000,
+	whitelist = { 'lstradingcard' }
+})
+
+setContainerProperties('lscardbook_green', {
+	slots = 90,
+	maxWeight = 1000,
+	whitelist = { 'lstradingcard' }
+})
+
+setContainerProperties('lscardbook_yellow', {
+	slots = 90,
+	maxWeight = 1000,
+	whitelist = { 'lstradingcard' }
+})
+
+
 return containers

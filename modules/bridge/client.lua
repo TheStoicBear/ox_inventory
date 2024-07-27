@@ -26,6 +26,7 @@ end
 
 local Shops = require 'modules.shops.client'
 local Utils = require 'modules.utils.client'
+local Weapon = require 'modules.weapon.client'
 
 function client.onLogout()
 	if not PlayerData.loaded then return end
